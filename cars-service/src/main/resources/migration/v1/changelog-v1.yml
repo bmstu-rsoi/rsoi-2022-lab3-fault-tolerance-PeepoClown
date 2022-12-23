@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: classpath:migration/v1/changelog-v1_create_cars_table.sql
+  - include:
+      file: classpath:migration/v1/changelog-v1_init_cars_table.sql
