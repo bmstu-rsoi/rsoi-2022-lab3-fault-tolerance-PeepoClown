@@ -1,20 +1,76 @@
-version: "3"
+version: "3.9"
+
 services:
   postgres:
     image: library/postgres:13
     container_name: postgres
     restart: on-failure
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: postgres
-    volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./postgres/:/docker-entrypoint-initdb.d/
     ports:
-      - "5432:5432"
+      - "${PG_HOST_PORT}:${PG_CONTAINER_PORT}"
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB_NAME}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./postgres/:/docker-entrypoint-initdb.d/
+    networks:
+      - svc-network
 
-# TODO добавить сервисы
+  cars:
+    build: ./cars-service
+    image: cars-service
+    container_name: cars-service-container
+    ports:
+      - "${CARS_PORT}:8070"
+    restart: on-failure
+    networks:
+      - svc-network
+    depends_on:
+      - postgres
+
+  payment:
+    build: ./payment-service
+    image: payment-service
+    container_name: payment-service-container
+    ports:
+      - "${PAYMENT_PORT}:8050"
+    restart: on-failure
+    networks:
+      - svc-network
+    depends_on:
+      - postgres
+
+  rental:
+    build: ./rental-service
+    image: rental-service
+    container_name: rental-service-container
+    ports:
+      - "${RENTAL_PORT}:8060"
+    restart: on-failure
+    networks:
+      - svc-network
+    depends_on:
+      - postgres
+
+  gateway:
+    build: ./gateway-service
+    image: gateway-service
+    container_name: gateway-service-container
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    restart: on-failure
+    networks:
+      - svc-network
+    depends_on:
+      - postgres
+      - cars
+      - payment
+      - rental
 
 volumes:
-  db-data:
+  pg-data:
+
+networks:
+  svc-network:
+    driver: bridge

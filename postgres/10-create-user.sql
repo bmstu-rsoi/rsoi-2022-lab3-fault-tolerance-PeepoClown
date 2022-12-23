@@ -1,3 +1,2 @@
--- file: 10-create-user.sql
-CREATE ROLE program WITH PASSWORD 'test';
-ALTER ROLE program WITH LOGIN;
+CREATE ROLE dev WITH PASSWORD 'dev';
+ALTER ROLE dev WITH LOGIN;
