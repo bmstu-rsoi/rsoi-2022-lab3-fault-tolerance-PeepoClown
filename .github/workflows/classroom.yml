@@ -15,31 +15,41 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: docker/setup-buildx-action@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
 
-      # TODO build and run unit tests
+      - name: Setup gradle
+        uses: gradle/gradle-build-action@v2
 
-      - name: Build images
+      - name: Gradle build
+        run: ./gradlew clean build
+
+      - name: Build docker images
         timeout-minutes: 10
         run: docker compose build
 
-      - name: Run containers
+      - name: Run docker containers
         timeout-minutes: 5
         run: |
           docker compose up -d
           ./scripts/wait-script.sh
         env:
-          WAIT_PORTS: 8080,8070,8060,8050
+          WAIT_PORTS: 8080,8070,8060,8050,5432
 
-      # TODO setup variant, service and port
+      - name: Wait docker containers up
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '30s'
 
       - name: Run API Tests
         timeout-minutes: 5
         run: ./scripts/test-script.sh
         env:
-          VARIANT: <variant>
-          SERVICE_NAME: <your service name>
-          PORT_NUMBER: <port number>
+          SERVICE_NAME: payment
+          PORT_NUMBER: 8050
 
       - uses: education/autograding@v1
         id: autograder
