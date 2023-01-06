@@ -57,7 +57,9 @@ class RentCarAction(
         val paymentResponse = createPayment(request, car)
         if (nonNull(paymentResponse.error)) {
             val errorMessage = paymentResponse.error
-            log.error { "Failed to create payment for car with uid ${car.carUid}" }
+            log.error { "Failed to create payment for car with uid ${car.carUid}. Cancel car ${car.carUid} reserve" }
+            carsServiceSender.unreserveCar(car.carUid)
+
             return ResponseEntity(
                 errorMessage,
                 paymentResponse.httpCode
@@ -101,7 +103,11 @@ class RentCarAction(
         val rentalResponse = rentalServiceSender.createRental(createRentRq)
         if (nonNull(rentalResponse.error)) {
             val errorMessage = rentalResponse.error
-            log.error { "Failed to create rent for payment with uid ${payment.paymentUid}" }
+            log.error { "Failed to create rent for payment with uid ${payment.paymentUid}. Cancel car ${car.carUid} reserve" }
+
+            paymentsServiceSender.cancelPayment(payment.paymentUid)
+            carsServiceSender.unreserveCar(car.carUid)
+
             return ResponseEntity(
                 errorMessage,
                 INTERNAL_SERVER_ERROR
