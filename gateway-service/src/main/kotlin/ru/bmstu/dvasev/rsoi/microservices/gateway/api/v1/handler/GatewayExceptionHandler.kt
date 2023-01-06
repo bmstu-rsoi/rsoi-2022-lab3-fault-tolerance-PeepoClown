@@ -34,16 +34,4 @@ class GatewayExceptionHandler {
             error = error
         )
     }
-
-    @ExceptionHandler(Exception::class)
-    fun handleInternalError(ex: Exception, request: WebRequest): ApiResponse<Any> {
-        log.error(ex) { "Internal server error: ${ex.message}" }
-        val error = ErrorResponse(
-            message = "Internal error. ${ex.message}"
-        )
-        return ApiResponse(
-            httpCode = HttpStatus.INTERNAL_SERVER_ERROR,
-            error = error
-        )
-    }
 }

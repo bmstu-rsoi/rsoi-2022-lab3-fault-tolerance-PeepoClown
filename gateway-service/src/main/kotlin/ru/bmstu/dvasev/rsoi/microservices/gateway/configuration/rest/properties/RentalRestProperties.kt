@@ -18,7 +18,7 @@ data class RentalRestProperties(
     @get:NotNull
     override val connectionTimeout: Duration = Duration.ofSeconds(3),
     @get:NotNull
-    override val readTimeout: Duration = Duration.ofSeconds(15),
+    override val readTimeout: Duration = Duration.ofSeconds(10),
     @get:Min(1)
     @get:Max(50)
     @get:NotNull

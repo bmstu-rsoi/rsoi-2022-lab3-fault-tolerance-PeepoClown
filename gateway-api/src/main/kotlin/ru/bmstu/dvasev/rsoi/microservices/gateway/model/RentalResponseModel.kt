@@ -5,22 +5,26 @@ import ru.bmstu.dvasev.rsoi.microservices.rental.model.RentStatus
 
 data class CarResponseModel(
     val carUid: String,
-    val brand: String,
-    val model: String,
-    val registrationNumber: String
-)
+    val brand: String?,
+    val model: String?,
+    val registrationNumber: String?
+) {
+    constructor(carUid: String) : this(carUid = carUid, null, null, null)
+}
 
 data class PaymentResponseModel(
     val paymentUid: String,
-    val status: PaymentStatus,
-    val price: Int
-)
+    val status: PaymentStatus?,
+    val price: Int?
+) {
+    constructor(paymentUid: String) : this(paymentUid = paymentUid, null, null)
+}
 
 data class RentalResponseModel(
     val rentalUid: String,
     val status: RentStatus,
     val dateFrom: String,
     val dateTo: String,
-    val car: CarResponseModel,
-    val payment: PaymentResponseModel
+    var car: CarResponseModel?,
+    var payment: PaymentResponseModel?
 )

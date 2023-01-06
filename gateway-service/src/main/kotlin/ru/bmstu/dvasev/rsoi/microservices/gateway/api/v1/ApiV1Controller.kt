@@ -1,6 +1,8 @@
 package ru.bmstu.dvasev.rsoi.microservices.gateway.api.v1
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -13,13 +15,18 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import ru.bmstu.dvasev.rsoi.microservices.cars.model.GetCarsRq
+import ru.bmstu.dvasev.rsoi.microservices.common.model.ErrorResponse
 import ru.bmstu.dvasev.rsoi.microservices.gateway.action.CarsGetAction
 import ru.bmstu.dvasev.rsoi.microservices.gateway.action.RentCarAction
 import ru.bmstu.dvasev.rsoi.microservices.gateway.action.RentEndAction
 import ru.bmstu.dvasev.rsoi.microservices.gateway.action.UserRentGetAction
+import ru.bmstu.dvasev.rsoi.microservices.gateway.exception.CarsServiceUnavailableException
 import ru.bmstu.dvasev.rsoi.microservices.gateway.model.CreateRentalRequest
 import ru.bmstu.dvasev.rsoi.microservices.gateway.model.CreateRentalRequestWithUser
 import javax.validation.Valid
+
+const val CARS_SERVICE = "cars-service"
+const val RENTAL_SERVICE = "rental-service"
 
 @RestController
 @RequestMapping(
@@ -37,6 +44,10 @@ class ApiV1Controller(
     @GetMapping(
         path = ["cars"],
         produces = [APPLICATION_JSON_VALUE]
+    )
+    @CircuitBreaker(
+        name = CARS_SERVICE,
+        fallbackMethod = "carsServiceInternalErrorFallback"
     )
     fun getAvailableCars(
         @RequestParam("page") page: Int?,
@@ -79,6 +90,10 @@ class ApiV1Controller(
         path = ["rental/{rentalUid}"],
         produces = [APPLICATION_JSON_VALUE]
     )
+    @CircuitBreaker(
+        name = RENTAL_SERVICE,
+        fallbackMethod = "rentalServiceInternalErrorFallback"
+    )
     fun getRentByUser(
         @RequestHeader("X-User-Name") username: String,
         @PathVariable("rentalUid") rentalUid: String
@@ -92,6 +107,10 @@ class ApiV1Controller(
     @GetMapping(
         path = ["rental"],
         produces = [APPLICATION_JSON_VALUE]
+    )
+    @CircuitBreaker(
+        name = RENTAL_SERVICE,
+        fallbackMethod = "rentalServiceInternalErrorFallback"
     )
     fun getRentsByUser(
         @RequestHeader("X-User-Name") username: String
@@ -128,5 +147,21 @@ class ApiV1Controller(
         val response = rentEndAction.finishRent(username = username, rentalUid = rentalUid)
         log.debug { "Return finish rent response. $response" }
         return response
+    }
+
+    fun carsServiceInternalErrorFallback(ex: CarsServiceUnavailableException): ResponseEntity<*> {
+        log.debug { "Cars service is unavailable. ${ex.message}. Calling fallback." }
+        val error = ErrorResponse(
+            message = "Internal error. ${ex.message}"
+        )
+        return ResponseEntity(error, INTERNAL_SERVER_ERROR)
+    }
+
+    fun rentalServiceInternalErrorFallback(ex: Exception): ResponseEntity<*> {
+        log.debug { "Rental service is unavailable. ${ex.message}. Calling fallback." }
+        val error = ErrorResponse(
+            message = "Internal error. ${ex.message}"
+        )
+        return ResponseEntity(error, INTERNAL_SERVER_ERROR)
     }
 }
