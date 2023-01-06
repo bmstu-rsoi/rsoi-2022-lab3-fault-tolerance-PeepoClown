@@ -37,4 +37,5 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
     implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1")
 }
