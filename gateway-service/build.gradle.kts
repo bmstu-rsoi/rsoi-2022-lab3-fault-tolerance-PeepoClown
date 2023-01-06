@@ -26,12 +26,13 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
+
     implementation("org.apache.httpcomponents:httpclient:4.5.13")
-
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
-
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
     implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
 }

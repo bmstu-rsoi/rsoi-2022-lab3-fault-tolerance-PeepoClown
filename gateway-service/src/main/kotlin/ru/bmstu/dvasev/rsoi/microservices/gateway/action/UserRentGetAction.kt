@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import ru.bmstu.dvasev.rsoi.microservices.gateway.exception.RentalServiceUnavailableException
 import ru.bmstu.dvasev.rsoi.microservices.gateway.external.CarsServiceSender
 import ru.bmstu.dvasev.rsoi.microservices.gateway.external.PaymentsServiceSender
 import ru.bmstu.dvasev.rsoi.microservices.gateway.external.RentalServiceSender
@@ -32,7 +33,11 @@ class UserRentGetAction(
         val rentalResponse = rentalServiceSender.getRentalByUserAndUid(getUserRentRq)
         if (nonNull(rentalResponse.error)) {
             val errorMessage = rentalResponse.error
-            log.error { "Failed to get user rent. ${errorMessage.toString()}" }
+            log.error { "Failed to get user rent. ${errorMessage.toString()}. Status code: ${rentalResponse.httpCode}" }
+
+            if (rentalResponse.httpCode.is5xxServerError) {
+                throw RentalServiceUnavailableException(errorMessage?.message!!)
+            }
             return ResponseEntity(
                 errorMessage,
                 rentalResponse.httpCode
@@ -53,7 +58,11 @@ class UserRentGetAction(
         val rentalResponse = rentalServiceSender.getRentalsByUser(getUserRentsRq)
         if (nonNull(rentalResponse.error)) {
             val errorMessage = rentalResponse.error
-            log.error { "Failed to get user rents. ${errorMessage.toString()}" }
+            log.error { "Failed to get user rent. ${errorMessage.toString()}. Status code: ${rentalResponse.httpCode}" }
+
+            if (rentalResponse.httpCode.is5xxServerError) {
+                throw RentalServiceUnavailableException(errorMessage?.message!!)
+            }
             return ResponseEntity(
                 errorMessage,
                 rentalResponse.httpCode
@@ -70,24 +79,32 @@ class UserRentGetAction(
     }
 
     private fun toRentalResponseModel(rental: RentalModel): RentalResponseModel {
-        val car = carsServiceSender.findCarByUid(rental.carUid).response!!
-        val payment = paymentsServiceSender.findPaymentByUid(rental.paymentUid).response!!
-        return RentalResponseModel(
+        val rentalResponse = RentalResponseModel(
             rentalUid = rental.rentalUid,
             status = rental.status,
             dateFrom = rental.dateFrom.format(ISO_DATE),
             dateTo = rental.dateTo.format(ISO_DATE),
-            car = CarResponseModel(
-                carUid = car.carUid,
-                brand = car.brand,
-                model = car.model,
-                registrationNumber = car.registrationNumber
-            ),
-            payment = PaymentResponseModel(
-                paymentUid = payment.paymentUid,
-                status = payment.status,
-                price = payment.price
-            )
+            car = CarResponseModel(carUid = rental.carUid),
+            payment = PaymentResponseModel(paymentUid = rental.paymentUid)
         )
+
+        val carResponse = carsServiceSender.findCarByUid(rental.carUid)
+        val paymentResponse = paymentsServiceSender.findPaymentByUid(rental.paymentUid)
+        if (!carResponse.httpCode.is5xxServerError) {
+            rentalResponse.car = CarResponseModel(
+                carUid = carResponse.response?.carUid!!,
+                brand = carResponse.response?.brand!!,
+                model = carResponse.response?.model!!,
+                registrationNumber = carResponse.response?.registrationNumber!!
+            )
+        }
+        if (!paymentResponse.httpCode.is5xxServerError) {
+            rentalResponse.payment = PaymentResponseModel(
+                paymentUid = paymentResponse.response?.paymentUid!!,
+                status = paymentResponse.response?.status!!,
+                price = paymentResponse.response?.price!!
+            )
+        }
+        return rentalResponse
     }
 }

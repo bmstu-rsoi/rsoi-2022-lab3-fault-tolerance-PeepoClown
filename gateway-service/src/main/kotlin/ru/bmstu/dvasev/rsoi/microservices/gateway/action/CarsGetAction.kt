@@ -4,7 +4,9 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpServerErrorException
 import ru.bmstu.dvasev.rsoi.microservices.cars.model.GetCarsRq
+import ru.bmstu.dvasev.rsoi.microservices.gateway.exception.CarsServiceUnavailableException
 import ru.bmstu.dvasev.rsoi.microservices.gateway.external.CarsServiceSender
 import java.util.Objects.nonNull
 
@@ -19,7 +21,11 @@ class CarsGetAction(
         val carsResponse = carsServiceSender.getAvailableCars(request)
         if (nonNull(carsResponse.error)) {
             val errorMessage = carsResponse.error
-            log.error { "Failed to get available cars. ${errorMessage.toString()}" }
+            log.error { "Failed to get available cars. ${errorMessage.toString()}. Status code: ${carsResponse.httpCode}" }
+
+            if (carsResponse.httpCode.is5xxServerError) {
+                throw CarsServiceUnavailableException(errorMessage?.message!!)
+            }
             return ResponseEntity(
                 errorMessage,
                 carsResponse.httpCode

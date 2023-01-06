@@ -13,6 +13,7 @@ plugins {
 ext {
     set("kotlinVersion", "1.6.21")
     set("springBootVersion", "2.7.5")
+    set("springCloudVersion", "2021.0.5")
 }
 
 subprojects {
@@ -27,6 +28,7 @@ subprojects {
     dependencyManagement {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:${rootProject.ext["springBootVersion"]}")
+            mavenBom("org.springframework.cloud:spring-cloud-dependencies:${rootProject.ext["springCloudVersion"]}")
         }
     }
 
