@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus.CONFLICT
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.OK
+import org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import ru.bmstu.dvasev.rsoi.microservices.cars.model.CarModel
@@ -60,6 +61,12 @@ class RentCarAction(
             log.error { "Failed to create payment for car with uid ${car.carUid}. Cancel car ${car.carUid} reserve" }
             carsServiceSender.unreserveCar(car.carUid)
 
+            if (paymentResponse.httpCode.is5xxServerError) {
+                return ResponseEntity(
+                    ErrorResponse(message = "Payment Service unavailable"),
+                    SERVICE_UNAVAILABLE
+                )
+            }
             return ResponseEntity(
                 errorMessage,
                 paymentResponse.httpCode

@@ -1,5 +1,6 @@
 package ru.bmstu.dvasev.rsoi.microservices.gateway.action
 
+import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
@@ -66,8 +67,10 @@ class RentEndAction(
             )
         }
 
-        rentCancelRetryTemplate.execute(RetryCallback<Unit, Exception> { cancelRentRetrials(rentalUid) })
-        paymentCancelRetryTemplate.execute(RetryCallback<Unit, Exception> { cancelPayment(rental.paymentUid) })
+        GlobalScope.launch {
+            rentCancelRetryTemplate.execute(RetryCallback<Unit, Exception> { cancelRentRetrials(rentalUid) })
+            paymentCancelRetryTemplate.execute(RetryCallback<Unit, Exception> { cancelPayment(rental.paymentUid) })
+        }
 
         return ResponseEntity(null, NO_CONTENT)
     }
